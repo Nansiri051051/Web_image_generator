@@ -18,10 +18,22 @@ OUTPUT_DIR = os.path.join(BASE_DIR, OUTPUT_DIR_NAME)
 if not os.path.exists(OUTPUT_DIR): 
     os.makedirs(OUTPUT_DIR, exist_ok=True) 
 
-# 🚨 การแก้ไข: กำหนดให้ใช้ฟอนต์ THSarabunNew.ttf ที่จะถูกอัปโหลดไปในโฟลเดอร์ 'templates'
-# ตรวจสอบให้แน่ใจว่าได้อัปโหลดไฟล์ 'thsarabunnew.ttf' ไปยังโฟลเดอร์ 'templates' ใน GitHub แล้ว
-FONT_NAME = 'thsarabunnew.ttf'
-DEFAULT_FONT_PATH = os.path.join(BASE_DIR, 'templates', FONT_NAME) 
+# 🚨 การแก้ไขเพื่อรองรับชื่อไฟล์ฟอนต์แบบ Case-Insensitive
+# โค้ดจะพยายามค้นหาไฟล์ฟอนต์ TH Sarabun New ในโฟลเดอร์ templates
+def find_thai_font_path(base_dir):
+    templates_dir = os.path.join(base_dir, 'templates')
+    # ตรวจสอบไฟล์ฟอนต์ที่พบในโฟลเดอร์ templates
+    if not os.path.exists(templates_dir):
+        return None
+        
+    for filename in os.listdir(templates_dir):
+        # ตรวจสอบชื่อไฟล์ที่ไม่สนใจตัวพิมพ์ใหญ่/เล็ก และต้องเป็นไฟล์ .ttf
+        if 'thsarabunnew' in filename.lower() and filename.lower().endswith('.ttf'):
+            return os.path.join(templates_dir, filename)
+    return None
+
+DEFAULT_FONT_PATH = find_thai_font_path(BASE_DIR)
+FONT_NAME = os.path.basename(DEFAULT_FONT_PATH) if DEFAULT_FONT_PATH else 'Default'
 
 DEFAULT_FONT_SIZE = 60
 # -----------------------------------
@@ -68,12 +80,13 @@ def generate_image():
     
     # 3. โหลดฟอนต์ (ใช้ฟอนต์ที่อัปโหลดเอง)
     try:
-        if DEFAULT_FONT_PATH and os.path.exists(DEFAULT_FONT_PATH):
+        if DEFAULT_FONT_PATH:
+            # ใช้ฟอนต์ที่ค้นพบด้วยชื่อไฟล์ที่ถูกต้อง
             FONT = ImageFont.truetype(DEFAULT_FONT_PATH, size=font_size) 
         else:
-            # Fallback หากไม่พบฟอนต์ที่อัปโหลด (ซึ่งไม่ควรเกิดขึ้นหากอัปโหลดถูกต้อง)
+            # Fallback หากไม่พบฟอนต์ที่อัปโหลด
             FONT = ImageFont.load_default() 
-            print(f"Warning: Custom font not found at {DEFAULT_FONT_PATH}. Using default font.")
+            print("Warning: Custom font not found. Using default font.")
             
     except IOError as e:
         # กรณีเกิด IOError (เช่น ไฟล์ฟอนต์เสีย)
