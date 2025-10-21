@@ -18,19 +18,10 @@ OUTPUT_DIR = os.path.join(BASE_DIR, OUTPUT_DIR_NAME)
 if not os.path.exists(OUTPUT_DIR): 
     os.makedirs(OUTPUT_DIR, exist_ok=True) 
 
-# 🚨 การแก้ไข: เพิ่มพาธฟอนต์ที่คาดว่ามีบน Render/Linux เพื่อให้รองรับภาษาไทย
-# เราจะลองใช้ NotoSansThai ก่อน เพราะมีโอกาสสูงที่จะมีบน Cloud
-FONT_SEARCH_PATHS = [
-    '/usr/share/fonts/truetype/noto/NotoSansThai.ttf',  # Common Noto path on Ubuntu/Render
-    '/usr/share/fonts/truetype/THSarabunNew.ttf', # Common Thai font path
-    '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', # Fallback for Latin/Basic
-]
-DEFAULT_FONT_PATH = None
-# ค้นหาฟอนต์ที่ใช้ได้
-for path in FONT_SEARCH_PATHS:
-    if os.path.exists(path):
-        DEFAULT_FONT_PATH = path
-        break
+# 🚨 การแก้ไข: กำหนดให้ใช้ฟอนต์ THSarabunNew.ttf ที่จะถูกอัปโหลดไปในโฟลเดอร์ 'templates'
+# ตรวจสอบให้แน่ใจว่าได้อัปโหลดไฟล์ 'thsarabunnew.ttf' ไปยังโฟลเดอร์ 'templates' ใน GitHub แล้ว
+FONT_NAME = 'thsarabunnew.ttf'
+DEFAULT_FONT_PATH = os.path.join(BASE_DIR, 'templates', FONT_NAME) 
 
 DEFAULT_FONT_SIZE = 60
 # -----------------------------------
@@ -69,40 +60,39 @@ def generate_image():
             width, height = 1000, 600 
             img = Image.new('RGBA', (width, height), hex_to_rgb(bg_color_hex) + (255,))
     except FileNotFoundError:
-        # บน Cloud, ตรวจสอบให้แน่ใจว่า template.png ถูก Upload ไปแล้ว
         return jsonify({"error": f"ไม่พบไฟล์ Template: template.png. โปรดตรวจสอบ!"}), 500
     except Exception as e:
         return jsonify({"error": f"เกิดข้อผิดพลาดในการโหลดหรือสร้างภาพ: {str(e)}"}), 500
 
     draw = ImageDraw.Draw(img)
     
-    # 3. โหลดฟอนต์ (ใช้ฟอนต์ที่สามารถปรับขนาดได้)
+    # 3. โหลดฟอนต์ (ใช้ฟอนต์ที่อัปโหลดเอง)
     try:
-        # 🚨 แก้ไข: ถ้ามี DEFAULT_FONT_PATH ให้โหลดฟอนต์นั้นด้วยขนาดที่ผู้ใช้ต้องการ
-        if DEFAULT_FONT_PATH:
+        if DEFAULT_FONT_PATH and os.path.exists(DEFAULT_FONT_PATH):
             FONT = ImageFont.truetype(DEFAULT_FONT_PATH, size=font_size) 
         else:
-             # ถ้าไม่พบฟอนต์ที่กำหนด ให้ใช้ฟอนต์ดีฟอลต์ แต่จะไม่สามารถปรับขนาดได้
-             FONT = ImageFont.load_default()
-    except IOError:
+            # Fallback หากไม่พบฟอนต์ที่อัปโหลด (ซึ่งไม่ควรเกิดขึ้นหากอัปโหลดถูกต้อง)
+            FONT = ImageFont.load_default() 
+            print(f"Warning: Custom font not found at {DEFAULT_FONT_PATH}. Using default font.")
+            
+    except IOError as e:
         # กรณีเกิด IOError (เช่น ไฟล์ฟอนต์เสีย)
         FONT = ImageFont.load_default() 
+        print(f"Error loading custom font: {e}. Using default font.")
         
     text_color_rgb = hex_to_rgb(text_color_hex)
     
     # 4. คำนวณขนาดและตำแหน่ง
     # ใช้ font.getbbox() เพื่อคำนวณขนาดข้อความอย่างถูกต้อง
     try:
-        # สำหรับฟอนต์ truetype
         bbox = draw.textbbox((0, 0), user_text, font=FONT)
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
 
     except Exception:
-        # สำหรับฟอนต์ load_default() ที่มักให้ขนาดเล็กกว่าความเป็นจริง
-        # คำนวณขนาดโดยประมาณจาก font_size และความยาวของข้อความ
-        # เราจะใช้วิธีที่แม่นยำกว่าสำหรับ load_default() ด้วย (ถ้ามี)
+        # Fallback สำหรับฟอนต์ load_default() หากเกิดปัญหาในการคำนวณ bbox
         text_width, text_height = draw.textsize(user_text, font=FONT)
+        print("Warning: Using fallback for text size calculation.")
 
     
     # คำนวณ X ตามการจัดตำแหน่ง
