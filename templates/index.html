@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Composer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container bg-white shadow-xl rounded-2xl p-6 md:p-10 w-full max-w-xl border border-gray-100">
+       <header class="text-center mb-6 border-b pb-4">
+    <h1 class="text-2xl font-extrabold text-blue-700 mb-1">
+        ✨ Text template generation system
+    </h1>
+    <p class="text-sm text-gray-500">
+        (ระบบสร้างข้อความเทมเพลต)
+    </p>
+</header>
+
+        <section class="mb-8 p-4 bg-gray-50 rounded-lg border">
+            <h2 class="text-xl font-semibold text-gray-800 mb-3">1. ปรับแต่งและกรอกข้อความ</h2>
+            
+            <div class="grid grid-cols-3 gap-4 mb-4 text-sm">
+                <div>
+                    <label for="font-size" class="block font-medium text-gray-700">ขนาดฟอนต์</label>
+                    <select id="font-size" class="mt-1 w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="40">40 (เล็ก)</option>
+                        <option value="60" selected>60 (ปกติ)</option>
+                        <option value="80">80 (ใหญ่)</option>
+                        <option value="100">100 (ใหญ่มาก)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="text-align" class="block font-medium text-gray-700">จัดตำแหน่ง</label>
+                    <select id="text-align" class="mt-1 w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="left" selected>ซ้าย</option>
+                        <option value="center">กลาง</option>
+                        <option value="right">ขวา</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="text-color" class="block font-medium text-gray-700">สีข้อความ</label>
+                    <select id="text-color" class="mt-1 w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="#000000" selected>ดำ</option>
+                        <option value="#FFFFFF">ขาว</option>
+                        <option value="#FF0000">แดง</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="bg-color" class="block font-medium text-gray-700 mb-1">สีพื้นหลัง (แทน Template)</label>
+                <select id="bg-color" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <option value="template" selected>ใช้ภาพ Template (ค่าเดิม)</option>
+                    <option value="#FFFFFF">สีขาว</option>
+                    <option value="#000000">สีดำ</option>
+                    <option value="#800080">สีม่วง</option>
+                    <option value="#0000FF">สีน้ำเงิน</option>
+                    <option value="#00BFFF">สีฟ้า</option>
+                    <option value="#008000">สีเขียว</option>
+                    <option value="#FFFF00">สีเหลือง</option>
+                    <option value="#FFA500">สีส้ม</option>
+                    <option value="#FF0000">สีแดง</option>
+                    <option value="#FF69B4">สีชมพู</option>
+                    <option value="#A9A9A9">สีเทา</option>
+                </select>
+               
+            </div>
+            <textarea id="text-input" rows="3" 
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150"
+                placeholder="พิมพ์ข้อความที่คุณต้องการให้ปรากฏบนภาพ"></textarea>
+            
+            <button id="generate-button" onclick="generateImage()" 
+                class="mt-4 w-full flex items-center justify-center space-x-2 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span id="button-icon">🚀</span>
+                <span id="button-text">สร้างภาพ!</span>
+            </button>
+            <p id="status-message" class="text-sm mt-2 text-center text-red-500 hidden"></p>
+        </section>
+
+        <section id="output-area" class="p-4 bg-gray-50 rounded-lg border">
+            <h2 class="text-xl font-semibold text-gray-800 mb-3">2. ภาพผลลัพธ์ที่สร้างโดยระบบ</h2>
+            
+            <div id="result-box" class="min-h-[150px] flex items-center justify-center bg-gray-200 rounded-lg overflow-hidden">
+                <img id="generated-image" src="" alt="Generated Image" class="w-full h-auto object-cover hidden">
+                <p id="initial-message" class="text-gray-500 p-4 text-center">กรุณากรอกข้อความและกด "สร้างภาพ!" เพื่อดูผลลัพธ์</p>
+            </div>
+            
+            <p id="download-tip" class="download-tip text-sm mt-3 text-center text-gray-600 hidden">
+                💡 คลิกที่รูปภาพเพื่อดาวน์โหลด
+            </p>
+        </section>
+    </div>
+
+    <script>
+        // อ้างอิง DOM Elements
+        const textInput = document.getElementById('text-input');
+        const generateButton = document.getElementById('generate-button');
+        const generatedImage = document.getElementById('generated-image');
+        const initialMessage = document.getElementById('initial-message');
+        const downloadTip = document.getElementById('download-tip');
+        const buttonText = document.getElementById('button-text');
+        const buttonIcon = document.getElementById('button-icon');
+        const statusMessage = document.getElementById('status-message');
+        
+        // ตัวเลือกใหม่
+        const fontSizeInput = document.getElementById('font-size');
+        const textAlignInput = document.getElementById('text-align');
+        const bgColorInput = document.getElementById('bg-color');
+        const textColorInput = document.getElementById('text-color');
+
+        async function generateImage() {
+            const userText = textInput.value.trim();
+            if (!userText) {
+                statusMessage.textContent = 'กรุณาพิมพ์ข้อความที่ต้องการก่อน';
+                statusMessage.classList.remove('hidden');
+                return;
+            }
+            statusMessage.classList.add('hidden');
+
+            // 1. จัดการ UI ขณะโหลด
+            generateButton.disabled = true;
+            buttonText.textContent = 'กำลังสร้าง...';
+            buttonIcon.textContent = '⏳';
+            initialMessage.textContent = 'กำลังประมวลผลภาพ กรุณารอสักครู่...';
+            initialMessage.classList.remove('hidden');
+            generatedImage.classList.add('hidden');
+            downloadTip.classList.add('hidden');
+
+            try {
+                // 2. รวบรวมข้อมูลทั้งหมดจากฟอร์ม
+                const postData = {
+                    user_text: userText,
+                    font_size: fontSizeInput.value,
+                    text_align: textAlignInput.value,
+                    bg_color: bgColorInput.value,
+                    text_color: textColorInput.value
+                };
+
+                // 3. ส่งข้อมูลไปยัง Flask Endpoint
+                const response = await fetch('/generate-image', { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(postData) // ส่งข้อมูลใหม่ทั้งหมด
+                });
+
+                const data = await response.json();
+                
+                // 4. จัดการผลลัพธ์
+                if (response.ok && data.image_url) {
+                    generatedImage.src = data.image_url;
+                    generatedImage.onload = () => {
+                        initialMessage.classList.add('hidden');
+                        generatedImage.classList.remove('hidden');
+                        downloadTip.classList.remove('hidden');
+                    };
+                } else {
+                    initialMessage.textContent = `❌ เกิดข้อผิดพลาด: ${data.error || 'Unknown Server Error'}`;
+                    initialMessage.classList.remove('hidden');
+                    console.error("Backend Error:", data.error);
+                }
+
+            } catch (error) {
+                initialMessage.textContent = '❌ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ หรือเกิดข้อผิดพลาดในการ Fetch!';
+                console.error('Fetch Error:', error);
+            } finally {
+                // 5. คืนค่า UI
+                generateButton.disabled = false;
+                buttonText.textContent = 'สร้างภาพ!';
+                buttonIcon.textContent = '🚀';
+            }
+        }
+    </script>
+</body>
+</html>
